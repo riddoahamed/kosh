@@ -3,11 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../services/trading_service.dart';
-import '../../services/supabase_service.dart';
 import './widgets/amount_input_widget.dart';
 import './widgets/confirmation_bottom_sheet.dart';
 import './widgets/input_toggle_widget.dart';
+import './widgets/instrument_header_widget.dart';
 import './widgets/order_summary_widget.dart';
 import './widgets/quantity_input_widget.dart';
 
@@ -28,11 +27,6 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
   String? _quantityError;
   String? _amountError;
   bool _isOrderProcessing = false;
-
-  // Enhanced with real trading service
-  final TradingService _tradingService = TradingService.instance;
-  String? _userId;
-  Map<String, dynamic>? _selectedInstrument;
 
   // Mock data for the instrument
   final Map<String, dynamic> _instrument = {
@@ -55,38 +49,6 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
     super.initState();
     _quantityController.addListener(_onQuantityChanged);
     _amountController.addListener(_onAmountChanged);
-    _initializeUser();
-    _loadInstrumentFromArguments();
-  }
-
-  void _initializeUser() {
-    final user = SupabaseService.instance.client.auth.currentUser;
-    if (user != null) {
-      _userId = user.id;
-    }
-  }
-
-  void _loadInstrumentFromArguments() {
-    // Load instrument data passed from navigation
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final args = ModalRoute.of(context)?.settings.arguments as String?;
-      if (args != null) {
-        _loadInstrumentBySymbol(args);
-      }
-    });
-  }
-
-  Future<void> _loadInstrumentBySymbol(String symbol) async {
-    try {
-      final instrument = await _tradingService.getInstrumentBySymbol(symbol);
-      if (instrument != null) {
-        setState(() {
-          _selectedInstrument = instrument;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading instrument: $e');
-    }
   }
 
   @override
@@ -205,84 +167,18 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
     );
   }
 
-  void _handleOrderConfirmation() async {
-    if (_userId == null || _selectedInstrument == null) return;
+  void _handleOrderConfirmation() {
+    setState(() {
+      _isOrderProcessing = true;
+    });
 
-    setState(() => _isOrderProcessing = true);
-
-    try {
-      final result = await _tradingService.executeBuyOrder(
-        userId: _userId!,
-        instrumentSymbol: _selectedInstrument!['symbol'],
-        quantity: _quantity ?? 0,
-        price: (_selectedInstrument!['last_price'] as num).toDouble(),
-      );
-
-      if (result['success'] == true) {
+    // Simulate order processing and show success
+    Future.delayed(Duration(seconds: 1), () {
+      if (mounted) {
         HapticFeedback.heavyImpact();
         _showOrderSuccessDialog();
-      } else {
-        _showErrorDialog(result['error'] ?? 'Unknown error occurred');
       }
-    } catch (e) {
-      _showErrorDialog('Failed to execute order: $e');
-    } finally {
-      setState(() => _isOrderProcessing = false);
-    }
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 20.w,
-              height: 20.w,
-              decoration: BoxDecoration(
-                color: AppTheme.errorColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: CustomIconWidget(
-                iconName: 'error',
-                color: AppTheme.errorColor,
-                size: 40,
-              ),
-            ),
-            SizedBox(height: 3.h),
-            Text(
-              "Order Failed",
-              style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              message,
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 3.h),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.errorColor,
-                ),
-                child: Text("Try Again"),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    });
   }
 
   void _showOrderSuccessDialog() {
@@ -390,11 +286,6 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
 
   @override
   Widget build(BuildContext context) {
-    // Use real instrument data if available, otherwise use mock data
-    final instrument = _selectedInstrument ?? _instrument;
-    final currentPrice =
-        (instrument['last_price'] ?? instrument['currentPrice']) as double;
-
     final remainingBalance = _availableBalance - _totalAmount;
     final canPlaceOrder = _totalAmount > 0 &&
         _totalAmount <= _availableBalance &&
@@ -406,102 +297,9 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
       body: SafeArea(
         child: Column(
           children: [
-            // Enhanced header with real-time data
-            Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.surface,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.shadowLight,
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          padding: EdgeInsets.all(2.w),
-                          decoration: BoxDecoration(
-                            color: AppTheme.borderLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: CustomIconWidget(
-                            iconName: 'arrow_back',
-                            color: AppTheme.textPrimaryLight,
-                            size: 20,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 4.w),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              instrument['symbol'] ?? 'N/A',
-                              style: AppTheme.lightTheme.textTheme.titleLarge
-                                  ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              instrument['name'] ?? 'Unknown Instrument',
-                              style: AppTheme.lightTheme.textTheme.bodyMedium
-                                  ?.copyWith(
-                                color: AppTheme.textSecondaryLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '৳${currentPrice.toStringAsFixed(2)}',
-                            style: AppTheme.lightTheme.textTheme.titleMedium
-                                ?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 2.w, vertical: 0.5.h),
-                            decoration: BoxDecoration(
-                              color: ((instrument['day_change_percent'] ??
-                                              instrument['changePercent'])
-                                          as double) >=
-                                      0
-                                  ? AppTheme.successColor.withAlpha(26)
-                                  : AppTheme.errorColor.withAlpha(26),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '${((instrument['day_change_percent'] ?? instrument['changePercent']) as double) >= 0 ? '+' : ''}${((instrument['day_change_percent'] ?? instrument['changePercent']) as double).toStringAsFixed(2)}%',
-                              style: AppTheme.lightTheme.textTheme.bodySmall
-                                  ?.copyWith(
-                                color: ((instrument['day_change_percent'] ??
-                                                instrument['changePercent'])
-                                            as double) >=
-                                        0
-                                    ? AppTheme.successColor
-                                    : AppTheme.errorColor,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            InstrumentHeaderWidget(
+              instrument: _instrument,
+              onClose: () => Navigator.pop(context),
             ),
             Expanded(
               child: SingleChildScrollView(
@@ -509,137 +307,64 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     SizedBox(height: 2.h),
-
-                    // Enhanced input toggle with Groww-style design
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightTheme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.shadowLight,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: InputToggleWidget(
-                        isQuantityMode: _isQuantityMode,
-                        onToggle: _toggleInputMode,
-                      ),
+                    InputToggleWidget(
+                      isQuantityMode: _isQuantityMode,
+                      onToggle: _toggleInputMode,
                     ),
-
                     SizedBox(height: 3.h),
-
-                    // Enhanced input fields
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightTheme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.shadowLight,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
+                    _isQuantityMode
+                        ? QuantityInputWidget(
+                            controller: _quantityController,
+                            onIncrement: _incrementQuantity,
+                            onDecrement: _decrementQuantity,
+                            onChanged: (_) => _onQuantityChanged(),
+                            errorText: _quantityError,
+                          )
+                        : AmountInputWidget(
+                            controller: _amountController,
+                            onChanged: (_) => _onAmountChanged(),
+                            errorText: _amountError,
                           ),
-                        ],
-                      ),
-                      child: _isQuantityMode
-                          ? QuantityInputWidget(
-                              controller: _quantityController,
-                              onIncrement: _incrementQuantity,
-                              onDecrement: _decrementQuantity,
-                              onChanged: (_) => _onQuantityChanged(),
-                              errorText: _quantityError,
-                            )
-                          : AmountInputWidget(
-                              controller: _amountController,
-                              onChanged: (_) => _onAmountChanged(),
-                              errorText: _amountError,
-                            ),
-                    ),
-
                     SizedBox(height: 3.h),
-
-                    // Enhanced order summary
-                    Container(
-                      margin: EdgeInsets.symmetric(horizontal: 4.w),
-                      decoration: BoxDecoration(
-                        color: AppTheme.lightTheme.colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.shadowLight,
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: OrderSummaryWidget(
-                        totalAmount: _totalAmount,
-                        availableBalance: _availableBalance,
-                        remainingBalance: remainingBalance,
-                        quantity: _quantity,
-                        unitPrice: currentPrice,
-                      ),
+                    OrderSummaryWidget(
+                      totalAmount: _totalAmount,
+                      availableBalance: _availableBalance,
+                      remainingBalance: remainingBalance,
+                      quantity: _quantity,
+                      unitPrice: _instrument["currentPrice"] as double,
                     ),
-
                     SizedBox(height: 4.h),
                   ],
                 ),
               ),
             ),
-
-            // Enhanced action button
             Container(
               padding: EdgeInsets.all(4.w),
               decoration: BoxDecoration(
                 color: AppTheme.lightTheme.colorScheme.surface,
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.shadowLight,
-                    blurRadius: 12,
-                    offset: const Offset(0, -4),
+                border: Border(
+                  top: BorderSide(
+                    color: AppTheme.lightTheme.colorScheme.outline
+                        .withValues(alpha: 0.2),
                   ),
-                ],
+                ),
               ),
               child: Column(
                 children: [
-                  Container(
+                  SizedBox(
                     width: double.infinity,
                     height: 6.h,
-                    decoration: BoxDecoration(
-                      gradient: canPlaceOrder ? AppTheme.primaryGradient : null,
-                      color: canPlaceOrder
-                          ? null
-                          : AppTheme.lightTheme.colorScheme.outline
-                              .withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: canPlaceOrder
-                          ? [
-                              BoxShadow(
-                                color: AppTheme.primaryLight.withAlpha(51),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : null,
-                    ),
                     child: ElevatedButton(
                       onPressed: canPlaceOrder && !_isOrderProcessing
                           ? _showConfirmationBottomSheet
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
+                        backgroundColor: canPlaceOrder
+                            ? AppTheme.lightTheme.colorScheme.primary
+                            : AppTheme.lightTheme.colorScheme.outline
+                                .withValues(alpha: 0.3),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: _isOrderProcessing
@@ -657,7 +382,7 @@ class _BuyOrderTicketState extends State<BuyOrderTicket> {
                               style: AppTheme.lightTheme.textTheme.titleMedium
                                   ?.copyWith(
                                 color: Colors.white,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                     ),

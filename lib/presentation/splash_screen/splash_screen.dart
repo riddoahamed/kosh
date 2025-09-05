@@ -4,6 +4,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/app_export.dart';
+import './widgets/animated_logo_widget.dart';
+import './widgets/loading_indicator_widget.dart';
+import './widgets/retry_button_widget.dart';
+import './widgets/trust_badge_widget.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -14,14 +19,25 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
-  late AnimationController _logoController;
   late AnimationController _fadeController;
-  late Animation<double> _logoScaleAnimation;
-  late Animation<double> _logoFadeAnimation;
-  late Animation<double> _screenFadeAnimation;
+  late Animation<double> _fadeAnimation;
 
+  bool _isLoading = true;
+  bool _showRetry = false;
+  String _loadingText = 'Initializing...';
   bool _isAuthenticated = false;
   bool _hasCompletedOnboarding = false;
+  bool _networkTimeout = false;
+
+  final List<String> _loadingSteps = [
+    'Initializing...',
+    'Checking authentication...',
+    'Loading user preferences...',
+    'Fetching market data...',
+    'Preparing dashboard...',
+  ];
+
+  int _currentStep = 0;
 
   @override
   void initState() {
@@ -31,72 +47,92 @@ class _SplashScreenState extends State<SplashScreen>
   }
 
   void _initializeAnimations() {
-    _logoController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
 
-    _logoScaleAnimation = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: Curves.elasticOut,
-    ));
-
-    _logoFadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _logoController,
-      curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
-    ));
-
-    _screenFadeAnimation = Tween<double>(
+    _fadeAnimation = Tween<double>(
       begin: 1.0,
       end: 0.0,
     ).animate(CurvedAnimation(
       parent: _fadeController,
       curve: Curves.easeOut,
     ));
-
-    _logoController.forward();
   }
 
   Future<void> _initializeApp() async {
     try {
-      // Set system UI overlay style
-      SystemChrome.setSystemUIOverlayStyle(
-        SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          systemNavigationBarColor: Colors.white,
-          systemNavigationBarIconBrightness: Brightness.dark,
-        ),
-      );
+      setState(() {
+        _isLoading = true;
+        _showRetry = false;
+        _networkTimeout = false;
+        _currentStep = 0;
+      });
 
-      // Check authentication and onboarding status
-      await _checkAppStatus();
+      // Check network connectivity
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult == ConnectivityResult.none) {
+        _handleNetworkError();
+        return;
+      }
 
-      // Wait for animation to complete, then navigate
-      await Future.delayed(const Duration(milliseconds: 3000));
+      // Step 1: Initialize core services
+      await _updateLoadingStep(0);
+      await _initializeCoreServices();
+
+      // Step 2: Check authentication status
+      await _updateLoadingStep(1);
+      await _checkAuthenticationStatus();
+
+      // Step 3: Load user preferences
+      await _updateLoadingStep(2);
+      await _loadUserPreferences();
+
+      // Step 4: Fetch market data cache
+      await _updateLoadingStep(3);
+      await _fetchMarketDataCache();
+
+      // Step 5: Prepare dashboard
+      await _updateLoadingStep(4);
+      await _prepareDashboard();
+
+      // Complete initialization
+      await Future.delayed(const Duration(milliseconds: 500));
       _navigateToNextScreen();
     } catch (e) {
-      // Handle errors gracefully
-      await Future.delayed(const Duration(milliseconds: 3000));
-      _navigateToNextScreen();
+      _handleInitializationError();
     }
   }
 
-  Future<void> _checkAppStatus() async {
+  Future<void> _updateLoadingStep(int step) async {
+    if (step < _loadingSteps.length) {
+      setState(() {
+        _currentStep = step;
+        _loadingText = _loadingSteps[step];
+      });
+      await Future.delayed(const Duration(milliseconds: 600));
+    }
+  }
+
+  Future<void> _initializeCoreServices() async {
+    // Initialize core app services
+    await Future.delayed(const Duration(milliseconds: 500));
+
+    // Set system UI overlay style
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: AppTheme.lightTheme.primaryColor,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: AppTheme.lightTheme.colorScheme.surface,
+        systemNavigationBarIconBrightness: Brightness.dark,
+      ),
+    );
+  }
+
+  Future<void> _checkAuthenticationStatus() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-
       final authToken = prefs.getString('auth_token');
       final userId = prefs.getString('user_id');
 
@@ -105,11 +141,79 @@ class _SplashScreenState extends State<SplashScreen>
           userId != null &&
           userId.isNotEmpty;
 
-      _hasCompletedOnboarding = prefs.getBool('completed_onboarding') ?? false;
+      await Future.delayed(const Duration(milliseconds: 400));
     } catch (e) {
       _isAuthenticated = false;
+    }
+  }
+
+  Future<void> _loadUserPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _hasCompletedOnboarding = prefs.getBool('completed_onboarding') ?? false;
+
+      // Load other user preferences
+      final theme = prefs.getString('theme_mode') ?? 'light';
+      final language = prefs.getString('language') ?? 'en';
+
+      await Future.delayed(const Duration(milliseconds: 400));
+    } catch (e) {
       _hasCompletedOnboarding = false;
     }
+  }
+
+  Future<void> _fetchMarketDataCache() async {
+    try {
+      // Simulate fetching market data cache
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Check if cache needs update
+      final prefs = await SharedPreferences.getInstance();
+      final lastUpdate = prefs.getString('last_market_update');
+      final now = DateTime.now().toIso8601String();
+
+      if (lastUpdate == null) {
+        await prefs.setString('last_market_update', now);
+      }
+    } catch (e) {
+      // Handle cache error gracefully
+    }
+  }
+
+  Future<void> _prepareDashboard() async {
+    try {
+      // Prepare dashboard data and UI
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      // Initialize user mode (fantasy/real)
+      final prefs = await SharedPreferences.getInstance();
+      final userMode = prefs.getString('user_mode') ?? 'fantasy';
+
+      // Set last active timestamp
+      await prefs.setString('last_active', DateTime.now().toIso8601String());
+    } catch (e) {
+      // Handle preparation error gracefully
+    }
+  }
+
+  void _handleNetworkError() {
+    setState(() {
+      _isLoading = false;
+      _showRetry = true;
+      _networkTimeout = true;
+    });
+  }
+
+  void _handleInitializationError() {
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _showRetry = true;
+          _networkTimeout = true;
+        });
+      }
+    });
   }
 
   void _navigateToNextScreen() {
@@ -130,9 +234,12 @@ class _SplashScreenState extends State<SplashScreen>
     });
   }
 
+  void _retryInitialization() {
+    _initializeApp();
+  }
+
   @override
   void dispose() {
-    _logoController.dispose();
     _fadeController.dispose();
     super.dispose();
   }
@@ -140,91 +247,82 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppTheme.lightTheme.colorScheme.surface,
       body: FadeTransition(
-        opacity: _screenFadeAnimation,
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          color: Colors.white,
-          child: Center(
-            child: AnimatedBuilder(
-              animation: _logoController,
-              builder: (context, child) {
-                return Transform.scale(
-                  scale: _logoScaleAnimation.value,
-                  child: FadeTransition(
-                    opacity: _logoFadeAnimation,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // KOSH Logo Design
-                        Container(
-                          width: 35.w,
-                          height: 35.w,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFF1B365D),
-                                const Color(0xFF2A4A6B),
-                              ],
+        opacity: _fadeAnimation,
+        child: SafeArea(
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  AppTheme.lightTheme.colorScheme.surface,
+                  AppTheme.lightTheme.colorScheme.surface
+                      .withValues(alpha: 0.95),
+                ],
+              ),
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Animated Logo
+                      const AnimatedLogoWidget(),
+
+                      SizedBox(height: 8.h),
+
+                      // Loading or Retry Content
+                      _showRetry
+                          ? RetryButtonWidget(
+                              onRetry: _retryInitialization,
+                              message: _networkTimeout
+                                  ? 'Connection timeout. Please check your internet connection.'
+                                  : 'Something went wrong. Please try again.',
+                            )
+                          : LoadingIndicatorWidget(
+                              loadingText: _loadingText,
                             ),
-                            borderRadius: BorderRadius.circular(8.w),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF1B365D)
-                                    .withValues(alpha: 0.3),
-                                blurRadius: 30,
-                                offset: const Offset(0, 15),
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              'KOSH',
-                              style: GoogleFonts.inter(
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: 1.5,
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        SizedBox(height: 4.h),
-
-                        // App Name
-                        Text(
-                          'KOSH',
-                          style: GoogleFonts.inter(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w700,
-                            color: const Color(0xFF2C3E50),
-                            letterSpacing: 2.0,
-                          ),
-                        ),
-
-                        SizedBox(height: 1.h),
-
-                        // Tagline
-                        Text(
-                          'Smart Trading Platform',
-                          style: GoogleFonts.inter(
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w400,
-                            color: const Color(0xFF7F8C8D),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-                );
-              },
+                ),
+
+                // Bottom Trust Elements
+                Padding(
+                  padding: EdgeInsets.only(bottom: 4.h),
+                  child: Column(
+                    children: [
+                      const TrustBadgeWidget(),
+                      SizedBox(height: 2.h),
+                      Text(
+                        'Secure • Trusted • BSEC Compliant',
+                        style: GoogleFonts.inter(
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
+                          color: AppTheme
+                              .lightTheme.colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                      SizedBox(height: 1.h),
+                      Text(
+                        'Last updated: ${DateTime.now().toString().substring(0, 16)}',
+                        style: GoogleFonts.inter(
+                          fontSize: 9.sp,
+                          fontWeight: FontWeight.w300,
+                          color: AppTheme
+                              .lightTheme.colorScheme.onSurfaceVariant
+                              .withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),

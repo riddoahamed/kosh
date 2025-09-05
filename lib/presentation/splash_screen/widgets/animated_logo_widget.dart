@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/app_export.dart';
 import '../../../theme/app_theme.dart';
@@ -75,11 +76,14 @@ class _AnimatedLogoWidgetState extends State<AnimatedLogoWidget>
                 ],
               ),
               child: Center(
-                child: Image.asset(
-                  'assets/images/img_app_logo.svg',
-                  width: 15.w,
-                  height: 15.w,
-                  fit: BoxFit.contain,
+                child: Text(
+                  'KOSH',
+                  style: GoogleFonts.inter(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
                 ),
               ),
             ),

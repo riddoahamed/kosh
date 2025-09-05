@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
-import '../../services/portfolio_service.dart';
-import '../../services/trading_service.dart';
-import '../../services/supabase_service.dart';
 import './widgets/empty_state_widget.dart';
 import './widgets/holdings_card.dart';
 import './widgets/market_highlight_card.dart';
@@ -28,105 +25,160 @@ class _DashboardHomeState extends State<DashboardHome>
   int _selectedTabIndex = 0;
   late TabController _tabController;
 
-  // Real data from Supabase
-  String? _userId;
-  Map<String, dynamic>? _portfolioData;
-  List<Map<String, dynamic>> _marketHighlights = [];
-  bool _isLoading = true;
+  // Mock user data
+  final String _userName = "Ahmed Rahman";
+  final double _totalBalance = 125750.50;
+  final double _dayChange = 2450.75;
+  final double _dayChangePercentage = 1.98;
+
+  // Mock holdings data
+  final List<Map<String, dynamic>> _holdings = [
+    {
+      "id": 1,
+      "symbol": "SQRPHARMA",
+      "name": "Square Pharmaceuticals Ltd.",
+      "type": "stock",
+      "quantity": 50,
+      "currentValue": 12500.00,
+      "dayChange": 250.00,
+      "dayChangePercentage": 2.04,
+      "logo":
+          "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=100&h=100&fit=crop&crop=center"
+    },
+    {
+      "id": 2,
+      "symbol": "BRACBANK",
+      "name": "BRAC Bank Limited",
+      "type": "stock",
+      "quantity": 100,
+      "currentValue": 8750.00,
+      "dayChange": -125.00,
+      "dayChangePercentage": -1.41,
+      "logo":
+          "https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=100&h=100&fit=crop&crop=center"
+    },
+    {
+      "id": 3,
+      "symbol": "GOLDMF",
+      "name": "Gold Mutual Fund",
+      "type": "mutual_fund",
+      "quantity": 25,
+      "currentValue": 15200.00,
+      "dayChange": 180.00,
+      "dayChangePercentage": 1.20,
+      "logo":
+          "https://images.unsplash.com/photo-1610375461246-83df859d849d?w=100&h=100&fit=crop&crop=center"
+    },
+  ];
+
+  // Mock transactions data
+  final List<Map<String, dynamic>> _recentTransactions = [
+    {
+      "id": 1,
+      "type": "buy",
+      "symbol": "SQRPHARMA",
+      "quantity": 25,
+      "price": 250.00,
+      "amount": 6250.00,
+      "status": "completed",
+      "timestamp": DateTime.now().subtract(const Duration(hours: 2)),
+    },
+    {
+      "id": 2,
+      "type": "sell",
+      "symbol": "BRACBANK",
+      "quantity": 50,
+      "price": 87.50,
+      "amount": 4375.00,
+      "status": "completed",
+      "timestamp": DateTime.now().subtract(const Duration(days: 1)),
+    },
+    {
+      "id": 3,
+      "type": "buy",
+      "symbol": "GOLDMF",
+      "quantity": 10,
+      "price": 608.00,
+      "amount": 6080.00,
+      "status": "pending",
+      "timestamp": DateTime.now().subtract(const Duration(days: 2)),
+    },
+  ];
+
+  // Mock market highlights data
+  final List<Map<String, dynamic>> _marketHighlights = [
+    {
+      "id": 1,
+      "symbol": "GRAMEENPHONE",
+      "name": "Grameenphone Ltd.",
+      "currentPrice": 285.50,
+      "dayChange": 8.25,
+      "dayChangePercentage": 2.98,
+      "logo":
+          "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=100&h=100&fit=crop&crop=center"
+    },
+    {
+      "id": 2,
+      "symbol": "WALTONHIL",
+      "name": "Walton Hi-Tech Industries Ltd.",
+      "currentPrice": 1245.00,
+      "dayChange": -15.50,
+      "dayChangePercentage": -1.23,
+      "logo":
+          "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop&crop=center"
+    },
+    {
+      "id": 3,
+      "symbol": "CITYBANK",
+      "name": "City Bank Limited",
+      "currentPrice": 32.75,
+      "dayChange": 1.25,
+      "dayChangePercentage": 3.97,
+      "logo":
+          "https://images.unsplash.com/photo-1541354329998-f4d9a9f9297f?w=100&h=100&fit=crop&crop=center"
+    },
+  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    _initializeData();
   }
 
-  Future<void> _initializeData() async {
-    setState(() => _isLoading = true);
-
-    try {
-      // Get current user
-      final user = SupabaseService.instance.client.auth.currentUser;
-      if (user != null) {
-        _userId = user.id;
-
-        // Fetch real portfolio data
-        await _loadPortfolioData();
-        await _loadMarketHighlights();
-      }
-    } catch (e) {
-      debugPrint('Error initializing data: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loadPortfolioData() async {
-    if (_userId == null) return;
-
-    try {
-      final portfolioData =
-          await PortfolioService.instance.getPortfolioData(_userId!);
-      setState(() {
-        _portfolioData = portfolioData;
-      });
-    } catch (e) {
-      debugPrint('Error loading portfolio data: $e');
-    }
-  }
-
-  Future<void> _loadMarketHighlights() async {
-    try {
-      final instruments =
-          await TradingService.instance.getActiveInstruments(limit: 10);
-      // Sort by day change percentage to show top movers
-      instruments.sort((a, b) => ((b['day_change_percent'] as num?) ?? 0.0)
-          .compareTo((a['day_change_percent'] as num?) ?? 0.0));
-      setState(() {
-        _marketHighlights = instruments.take(5).toList();
-      });
-    } catch (e) {
-      debugPrint('Error loading market highlights: $e');
-    }
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> _refreshData() async {
     setState(() => _isRefreshing = true);
 
-    try {
-      await _loadPortfolioData();
-      await _loadMarketHighlights();
+    // Simulate API call delay
+    await Future.delayed(const Duration(seconds: 2));
 
-      HapticFeedback.lightImpact();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              CustomIconWidget(
-                iconName: 'check_circle',
-                color: AppTheme.successColor,
-                size: 20,
-              ),
-              SizedBox(width: 2.w),
-              Text('Portfolio updated successfully'),
-            ],
-          ),
-          backgroundColor: AppTheme.lightTheme.colorScheme.surface,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    setState(() => _isRefreshing = false);
+
+    // Show success feedback
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            CustomIconWidget(
+              iconName: 'check_circle',
+              color: AppTheme.successColor,
+              size: 20,
+            ),
+            SizedBox(width: 2.w),
+            Text('Portfolio updated successfully'),
+          ],
         ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to refresh data'),
-          backgroundColor: AppTheme.errorColor,
-        ),
-      );
-    } finally {
-      setState(() => _isRefreshing = false);
-    }
+        backgroundColor: AppTheme.lightTheme.colorScheme.surface,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+    );
   }
 
   void _toggleBalanceVisibility() {
@@ -268,42 +320,7 @@ class _DashboardHomeState extends State<DashboardHome>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(
-                color: AppTheme.primaryLight,
-                strokeWidth: 3.0,
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                'Loading your portfolio...',
-                style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondaryLight,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    final portfolioSummary = _portfolioData?['summary'] ?? {};
-    final positions = (_portfolioData?['positions'] as List?) ?? [];
-    final recentTrades = (_portfolioData?['recent_trades'] as List?) ?? [];
-    final metrics = _portfolioData?['metrics'] ?? {};
-
-    final hasHoldings = positions.isNotEmpty;
-    final totalValue = (metrics['current_value'] as num?)?.toDouble() ?? 0.0;
-    final dayChange = (metrics['day_change'] as num?)?.toDouble() ?? 0.0;
-    final dayChangePercentage =
-        (metrics['day_change_percent'] as num?)?.toDouble() ?? 0.0;
-    final availableBalance =
-        (portfolioSummary['cash_available'] as num?)?.toDouble() ?? 50000.0;
+    final bool hasHoldings = _holdings.isNotEmpty;
 
     return Scaffold(
       backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
@@ -313,7 +330,7 @@ class _DashboardHomeState extends State<DashboardHome>
           color: AppTheme.primaryLight,
           child: CustomScrollView(
             slivers: [
-              // Enhanced App Bar
+              // App Bar
               SliverAppBar(
                 floating: true,
                 backgroundColor: AppTheme.lightTheme.scaffoldBackgroundColor,
@@ -322,15 +339,15 @@ class _DashboardHomeState extends State<DashboardHome>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Good ${_getGreeting()}',
+                      'Good ${_getGreeting()},',
                       style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondaryLight,
                       ),
                     ),
                     Text(
-                      'Investor', // Can be fetched from user profile
+                      _userName,
                       style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -340,31 +357,18 @@ class _DashboardHomeState extends State<DashboardHome>
                     margin: EdgeInsets.only(right: 4.w),
                     child: Row(
                       children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 2.w, vertical: 0.5.h),
-                          decoration: BoxDecoration(
-                            color: AppTheme.successColor.withAlpha(26),
-                            borderRadius: BorderRadius.circular(20),
+                        Text(
+                          'Last updated: ${_getLastUpdatedTime()}',
+                          style:
+                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                            color: AppTheme.textSecondaryLight,
                           ),
-                          child: Row(
-                            children: [
-                              CustomIconWidget(
-                                iconName: 'fiber_manual_record',
-                                color: AppTheme.successColor,
-                                size: 8,
-                              ),
-                              SizedBox(width: 1.w),
-                              Text(
-                                'Live',
-                                style: AppTheme.lightTheme.textTheme.bodySmall
-                                    ?.copyWith(
-                                  color: AppTheme.successColor,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+                        ),
+                        SizedBox(width: 2.w),
+                        CustomIconWidget(
+                          iconName: 'access_time',
+                          color: AppTheme.textSecondaryLight,
+                          size: 16,
                         ),
                       ],
                     ),
@@ -372,25 +376,25 @@ class _DashboardHomeState extends State<DashboardHome>
                 ],
               ),
 
-              // Enhanced Portfolio Value Card with real data
+              // Portfolio Value Card
               SliverToBoxAdapter(
                 child: PortfolioValueCard(
-                  totalBalance: totalValue + availableBalance,
-                  dayChange: dayChange,
-                  dayChangePercentage: dayChangePercentage,
+                  totalBalance: _totalBalance,
+                  dayChange: _dayChange,
+                  dayChangePercentage: _dayChangePercentage,
                   isFantasyMode: _isFantasyMode,
                   onToggleVisibility: _toggleBalanceVisibility,
                   isBalanceVisible: _isBalanceVisible,
                 ),
               ),
 
-              // Main Content with real data
+              // Main Content
               hasHoldings
                   ? SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Real Holdings Section
+                          // Top Holdings Section
                           Padding(
                             padding: EdgeInsets.symmetric(
                                 horizontal: 4.w, vertical: 2.h),
@@ -398,164 +402,23 @@ class _DashboardHomeState extends State<DashboardHome>
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  'Your Holdings',
+                                  'Top Holdings',
                                   style: AppTheme
                                       .lightTheme.textTheme.titleMedium
                                       ?.copyWith(
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 GestureDetector(
                                   onTap: () => Navigator.pushNamed(
                                       context, '/portfolio-holdings'),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 3.w, vertical: 1.h),
-                                    decoration: BoxDecoration(
-                                      color:
-                                          AppTheme.primaryLight.withAlpha(26),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          'View All',
-                                          style: AppTheme
-                                              .lightTheme.textTheme.bodySmall
-                                              ?.copyWith(
-                                            color: AppTheme.primaryLight,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(width: 1.w),
-                                        CustomIconWidget(
-                                          iconName: 'arrow_forward_ios',
-                                          color: AppTheme.primaryLight,
-                                          size: 12,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 22.h,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              padding: EdgeInsets.symmetric(horizontal: 4.w),
-                              itemCount: positions.length,
-                              itemBuilder: (context, index) {
-                                final position = positions[index];
-                                final instrument = position['instruments'];
-
-                                return Container(
-                                  width: 70.w,
-                                  margin: EdgeInsets.only(right: 4.w),
-                                  child: HoldingsCard(
-                                    holding: {
-                                      'symbol': instrument['symbol'],
-                                      'name': instrument['name'],
-                                      'quantity': position['quantity'],
-                                      'currentValue': position['market_value'],
-                                      'dayChange': position['unrealized_pnl'],
-                                      'dayChangePercentage':
-                                          position['unrealized_pnl_percent'],
-                                      'sector': instrument['sector'],
-                                    },
-                                    onTap: () => _onHoldingTap(position),
-                                    onLongPress: () =>
-                                        _onHoldingLongPress(position),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-
-                          // Real Recent Transactions Section
-                          if (recentTrades.isNotEmpty) ...[
-                            Padding(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 4.w, vertical: 2.h),
-                              child: Text(
-                                'Recent Transactions',
-                                style: AppTheme.lightTheme.textTheme.titleMedium
-                                    ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ),
-                            ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: EdgeInsets.symmetric(horizontal: 4.w),
-                              itemCount: recentTrades.length > 3
-                                  ? 3
-                                  : recentTrades.length,
-                              itemBuilder: (context, index) {
-                                final trade = recentTrades[index];
-                                return TransactionItem(
-                                  transaction: {
-                                    'id': trade['id'],
-                                    'type': trade['order_side'],
-                                    'symbol': trade['instruments']['symbol'],
-                                    'quantity': trade['quantity'],
-                                    'price': trade['price'],
-                                    'amount': trade['total_amount'],
-                                    'status': 'completed',
-                                    'timestamp':
-                                        DateTime.parse(trade['created_at']),
-                                  },
-                                  onTap: () => _onTransactionTap(trade),
-                                );
-                              },
-                            ),
-                          ],
-
-                          // Enhanced Market Highlights with real data
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 4.w, vertical: 2.h),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Market Highlights',
-                                  style: AppTheme
-                                      .lightTheme.textTheme.titleMedium
-                                      ?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                GestureDetector(
-                                  onTap: () => Navigator.pushNamed(
-                                      context, '/markets-browse'),
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 3.w, vertical: 1.h),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.accentColor.withAlpha(26),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          'Explore',
-                                          style: AppTheme
-                                              .lightTheme.textTheme.bodySmall
-                                              ?.copyWith(
-                                            color: AppTheme.accentColor,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                        SizedBox(width: 1.w),
-                                        CustomIconWidget(
-                                          iconName: 'trending_up',
-                                          color: AppTheme.accentColor,
-                                          size: 14,
-                                        ),
-                                      ],
+                                  child: Text(
+                                    'View All',
+                                    style: AppTheme
+                                        .lightTheme.textTheme.bodyMedium
+                                        ?.copyWith(
+                                      color: AppTheme.primaryLight,
+                                      fontWeight: FontWeight.w500,
                                     ),
                                   ),
                                 ),
@@ -567,30 +430,93 @@ class _DashboardHomeState extends State<DashboardHome>
                             child: ListView.builder(
                               scrollDirection: Axis.horizontal,
                               padding: EdgeInsets.symmetric(horizontal: 4.w),
-                              itemCount: _marketHighlights.length,
+                              itemCount: _holdings.length,
                               itemBuilder: (context, index) {
-                                final instrument = _marketHighlights[index];
-                                return Container(
-                                  width: 65.w,
-                                  margin: EdgeInsets.only(right: 4.w),
-                                  child: MarketHighlightCard(
-                                    instrument: {
-                                      'symbol': instrument['symbol'],
-                                      'name': instrument['name'],
-                                      'currentPrice': instrument['last_price'],
-                                      'dayChange': instrument['day_change'],
-                                      'dayChangePercentage':
-                                          instrument['day_change_percent'],
-                                      'sector': instrument['sector'],
-                                    },
-                                    onTap: () =>
-                                        _onMarketHighlightTap(instrument),
-                                  ),
+                                return HoldingsCard(
+                                  holding: _holdings[index],
+                                  onTap: () => _onHoldingTap(_holdings[index]),
+                                  onLongPress: () =>
+                                      _onHoldingLongPress(_holdings[index]),
                                 );
                               },
                             ),
                           ),
-                          SizedBox(height: 12.h),
+
+                          // Recent Transactions Section
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 4.w, vertical: 2.h),
+                            child: Text(
+                              'Recent Transactions',
+                              style: AppTheme.lightTheme.textTheme.titleMedium
+                                  ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            padding: EdgeInsets.symmetric(horizontal: 4.w),
+                            itemCount: _recentTransactions.length > 3
+                                ? 3
+                                : _recentTransactions.length,
+                            itemBuilder: (context, index) {
+                              return TransactionItem(
+                                transaction: _recentTransactions[index],
+                                onTap: () => _onTransactionTap(
+                                    _recentTransactions[index]),
+                              );
+                            },
+                          ),
+
+                          // Market Highlights Section
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 4.w, vertical: 2.h),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  'Market Highlights',
+                                  style: AppTheme
+                                      .lightTheme.textTheme.titleMedium
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                GestureDetector(
+                                  onTap: () => Navigator.pushNamed(
+                                      context, '/markets-browse'),
+                                  child: Text(
+                                    'View All',
+                                    style: AppTheme
+                                        .lightTheme.textTheme.bodyMedium
+                                        ?.copyWith(
+                                      color: AppTheme.primaryLight,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(
+                            height: 18.h,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: EdgeInsets.symmetric(horizontal: 4.w),
+                              itemCount: _marketHighlights.length,
+                              itemBuilder: (context, index) {
+                                return MarketHighlightCard(
+                                  instrument: _marketHighlights[index],
+                                  onTap: () => _onMarketHighlightTap(
+                                      _marketHighlights[index]),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 10.h),
                         ],
                       ),
                     )
@@ -614,7 +540,6 @@ class _DashboardHomeState extends State<DashboardHome>
         backgroundColor: AppTheme.lightTheme.colorScheme.surface,
         selectedItemColor: AppTheme.primaryLight,
         unselectedItemColor: AppTheme.textSecondaryLight,
-        elevation: 12.0,
         items: [
           BottomNavigationBarItem(
             icon: CustomIconWidget(
@@ -668,29 +593,13 @@ class _DashboardHomeState extends State<DashboardHome>
           ),
         ],
       ),
-      floatingActionButton: Container(
-        height: 14.w,
-        width: 14.w,
-        decoration: BoxDecoration(
-          gradient: AppTheme.primaryGradient,
-          borderRadius: BorderRadius.circular(25),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primaryLight.withAlpha(51),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: FloatingActionButton(
-          onPressed: _showQuickActionBottomSheet,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          child: CustomIconWidget(
-            iconName: 'add',
-            color: Colors.white,
-            size: 28,
-          ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showQuickActionBottomSheet,
+        backgroundColor: AppTheme.primaryLight,
+        child: CustomIconWidget(
+          iconName: 'add',
+          color: Colors.white,
+          size: 28,
         ),
       ),
     );

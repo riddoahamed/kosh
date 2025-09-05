@@ -53,18 +53,60 @@ class EmptyStateWidget extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           SizedBox(height: 4.h),
-          Text(
-  'You have ৳1,00,000 virtual money to start with',
-  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-    color: Color(0XFF5C6BC0),
-    fontFamily: 'Inter_regular',
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
-    height: 1.43,
-    letterSpacing: 0.25,
-    wordSpacing: 0,
-  ),
-),
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(4.w),
+            decoration: BoxDecoration(
+              color: AppTheme.accentColor.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: AppTheme.accentColor.withValues(alpha: 0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    CustomIconWidget(
+                      iconName: 'account_balance_wallet',
+                      color: AppTheme.accentColor,
+                      size: 24,
+                    ),
+                    SizedBox(width: 3.w),
+                    Text(
+                      'You have ৳1,00,000 virtual money to start with',
+                      style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.accentColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 2.h),
+                Row(
+                  children: [
+                    CustomIconWidget(
+                      iconName: 'school',
+                      color: AppTheme.accentColor,
+                      size: 24,
+                    ),
+                    SizedBox(width: 3.w),
+                    Expanded(
+                      child: Text(
+                        'Learn investing basics through our educational content',
+                        style:
+                            AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.accentColor,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           SizedBox(height: 4.h),
           SizedBox(
             width: double.infinity,
