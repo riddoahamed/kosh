@@ -17,8 +17,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _showBiometric = false;
-  final DateTime _lastLoginTime =
-      DateTime.now().subtract(const Duration(hours: 2));
+  final DateTime _lastLoginTime = DateTime.now().subtract(
+    const Duration(hours: 2),
+  );
 
   // Mock credentials for testing
   final Map<String, String> _mockCredentials = {
@@ -67,10 +68,10 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         );
 
-        // Navigate to dashboard
+        // Navigate to Markets Browse instead of dashboard
         await Future.delayed(const Duration(milliseconds: 500));
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/dashboard-home');
+          Navigator.pushReplacementNamed(context, '/markets-browse');
         }
       } else {
         // Failed authentication
@@ -91,7 +92,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
-              'Connection error. Please check your internet and try again.'),
+            'Connection error. Please check your internet and try again.',
+          ),
           backgroundColor: AppTheme.errorColor,
           behavior: SnackBarBehavior.floating,
         ),
@@ -116,8 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    // Navigate to dashboard
-    Navigator.pushReplacementNamed(context, '/dashboard-home');
+    // Navigate to Markets Browse instead of dashboard
+    Navigator.pushReplacementNamed(context, '/markets-browse');
   }
 
   void _navigateToSignUp() {
@@ -139,7 +141,8 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: EdgeInsets.symmetric(horizontal: 6.w),
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minHeight: MediaQuery.of(context).size.height -
+                minHeight:
+                    MediaQuery.of(context).size.height -
                     MediaQuery.of(context).padding.top -
                     MediaQuery.of(context).padding.bottom,
               ),
@@ -184,14 +187,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: Center(
                           child: Text(
                             'KOSH',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall
-                                ?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 2,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 2,
+                            ),
                           ),
                         ),
                       ),
@@ -202,13 +204,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Welcome Text
                     Text(
                       'Welcome Back',
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineMedium
-                          ?.copyWith(
-                            color: AppTheme.lightTheme.colorScheme.onSurface,
-                            fontWeight: FontWeight.bold,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.headlineMedium?.copyWith(
+                        color: AppTheme.lightTheme.colorScheme.onSurface,
+                        fontWeight: FontWeight.bold,
+                      ),
                       textAlign: TextAlign.center,
                     ),
 
@@ -217,9 +218,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Sign in to continue your investing journey',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppTheme
-                                .lightTheme.colorScheme.onSurfaceVariant,
-                          ),
+                        color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                      ),
                       textAlign: TextAlign.center,
                     ),
 
@@ -238,9 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
 
                     // Trust Indicators
-                    TrustIndicatorsWidget(
-                      lastLoginTime: _lastLoginTime,
-                    ),
+                    TrustIndicatorsWidget(lastLoginTime: _lastLoginTime),
 
                     const Spacer(),
 
@@ -252,27 +250,27 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Text(
                             'New to investing? ',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyMedium
-                                ?.copyWith(
-                                  color: AppTheme
-                                      .lightTheme.colorScheme.onSurfaceVariant,
-                                ),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  AppTheme
+                                      .lightTheme
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                            ),
                           ),
                           GestureDetector(
                             onTap: _isLoading ? null : _navigateToSignUp,
                             child: Text(
                               'Sign Up',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color:
-                                        AppTheme.lightTheme.colorScheme.primary,
-                                    fontWeight: FontWeight.w600,
-                                    decoration: TextDecoration.underline,
-                                  ),
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.lightTheme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
                             ),
                           ),
                         ],

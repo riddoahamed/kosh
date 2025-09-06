@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_export.dart';
-import './widgets/achievement_badge_widget.dart';
-import './widgets/course_card_widget.dart';
-import './widgets/featured_article_widget.dart';
-import './widgets/progress_header_widget.dart';
-import './widgets/quiz_card_widget.dart';
-import './widgets/search_bar_widget.dart';
 
 class LearnHub extends StatefulWidget {
   const LearnHub({Key? key}) : super(key: key);
@@ -16,235 +11,62 @@ class LearnHub extends StatefulWidget {
   State<LearnHub> createState() => _LearnHubState();
 }
 
-class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
-  late TabController _tabController;
-  String _searchQuery = '';
+class _LearnHubState extends State<LearnHub> {
   int _selectedBottomIndex = 2; // Learn tab active
 
-  // Mock data for progress
-  final Map<String, dynamic> _progressData = {
-    "overallProgress": 0.65,
-    "completedCourses": 8,
-    "totalCourses": 12,
-    "streakDays": 7,
-    "currentLevel": "Intermediate"
-  };
-
-  // Mock data for courses
-  final List<Map<String, dynamic>> _coursesData = [
+  // Simple FAQ data - linking to placeholder website URLs
+  final List<Map<String, dynamic>> _faqData = [
     {
-      "id": 1,
-      "title": "Stock Market Fundamentals",
-      "description":
-          "Learn the basics of stock investing, market analysis, and building your first portfolio with confidence.",
-      "progress": 0.8,
-      "duration": "45 min",
-      "difficulty": "Beginner",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isCompleted": false
+      'question': 'How do I open a BO account?',
+      'answer':
+          'Learn about opening a BO (Beneficiary Owner) account with our partner brokers.',
+      'url': 'https://kosh.com.bd/help/bo-account',
+      'icon': 'account_balance',
     },
     {
-      "id": 2,
-      "title": "Mutual Fund Mastery",
-      "description":
-          "Understand different types of mutual funds, SIP strategies, and how to choose the right funds for your goals.",
-      "progress": 1.0,
-      "duration": "60 min",
-      "difficulty": "Intermediate",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1554224155-6726b3ff858f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isCompleted": true
+      'question': 'How to buy and sell shares?',
+      'answer':
+          'Step-by-step guide to placing buy and sell orders in the stock market.',
+      'url': 'https://kosh.com.bd/help/trading-guide',
+      'icon': 'swap_horiz',
     },
     {
-      "id": 3,
-      "title": "Technical Analysis Basics",
-      "description":
-          "Master chart patterns, indicators, and technical analysis tools to make informed trading decisions.",
-      "progress": 0.3,
-      "duration": "90 min",
-      "difficulty": "Advanced",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isCompleted": false
+      'question': 'Understanding your portfolio',
+      'answer':
+          'Learn how to track your investments and monitor portfolio performance.',
+      'url': 'https://kosh.com.bd/help/portfolio-management',
+      'icon': 'pie_chart',
     },
     {
-      "id": 4,
-      "title": "Risk Management Strategies",
-      "description":
-          "Learn how to protect your investments through proper risk assessment and portfolio diversification.",
-      "progress": 0.5,
-      "duration": "40 min",
-      "difficulty": "Intermediate",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1460925895917-afdab827c52f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isCompleted": false
+      'question': 'Stock market basics',
+      'answer':
+          'Essential concepts every investor should know about the stock market.',
+      'url': 'https://kosh.com.bd/help/market-basics',
+      'icon': 'trending_up',
     },
     {
-      "id": 5,
-      "title": "Gold Investment Guide",
-      "description":
-          "Explore different ways to invest in gold, from physical gold to ETFs and digital gold platforms.",
-      "progress": 0.0,
-      "duration": "35 min",
-      "difficulty": "Beginner",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1610375461246-83df859d849d?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isCompleted": false
-    }
+      'question': 'Investment risks and safety',
+      'answer':
+          'Important information about investment risks and how to invest safely.',
+      'url': 'https://kosh.com.bd/help/investment-safety',
+      'icon': 'security',
+    },
   ];
 
-  // Mock data for featured articles
-  final List<Map<String, dynamic>> _articlesData = [
-    {
-      "id": 1,
-      "title": "Market Volatility: Opportunity or Risk?",
-      "author": "Sarah Ahmed",
-      "readTime": "8 min read",
-      "publishedDate": "Dec 15",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isBookmarked": true,
-      "isDownloaded": true
-    },
-    {
-      "id": 2,
-      "title": "Building Wealth Through SIP Investments",
-      "author": "Rahul Khan",
-      "readTime": "12 min read",
-      "publishedDate": "Dec 12",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1554224155-6726b3ff858f?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isBookmarked": false,
-      "isDownloaded": false
-    },
-    {
-      "id": 3,
-      "title": "Cryptocurrency vs Traditional Assets",
-      "author": "Fatima Hassan",
-      "readTime": "15 min read",
-      "publishedDate": "Dec 10",
-      "imageUrl":
-          "https://images.unsplash.com/photo-1518546305927-5a555bb7020d?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3",
-      "isBookmarked": false,
-      "isDownloaded": true
-    }
-  ];
-
-  // Mock data for achievements
-  final List<Map<String, dynamic>> _achievementsData = [
-    {
-      "id": 1,
-      "title": "First Course",
-      "description": "Complete your first course",
-      "iconName": "school",
-      "isEarned": true,
-      "earnedDate": "Nov 28"
-    },
-    {
-      "id": 2,
-      "title": "Quiz Master",
-      "description": "Score 90%+ on 5 quizzes",
-      "iconName": "quiz",
-      "isEarned": true,
-      "earnedDate": "Dec 5"
-    },
-    {
-      "id": 3,
-      "title": "Streak Hero",
-      "description": "7-day learning streak",
-      "iconName": "local_fire_department",
-      "isEarned": true,
-      "earnedDate": "Dec 15"
-    },
-    {
-      "id": 4,
-      "title": "Expert Trader",
-      "description": "Complete advanced courses",
-      "iconName": "trending_up",
-      "isEarned": false,
-      "earnedDate": ""
-    }
-  ];
-
-  // Mock data for quizzes
-  final List<Map<String, dynamic>> _quizzesData = [
-    {
-      "id": 1,
-      "title": "Stock Market Basics Quiz",
-      "description":
-          "Test your knowledge of fundamental stock market concepts and terminology.",
-      "totalQuestions": 15,
-      "completedQuestions": 15,
-      "difficulty": "Beginner",
-      "isCompleted": true,
-      "bestScore": 87
-    },
-    {
-      "id": 2,
-      "title": "Mutual Fund Assessment",
-      "description":
-          "Evaluate your understanding of mutual fund types, NAV, and investment strategies.",
-      "totalQuestions": 20,
-      "completedQuestions": 12,
-      "difficulty": "Intermediate",
-      "isCompleted": false,
-      "bestScore": null
-    },
-    {
-      "id": 3,
-      "title": "Risk Management Challenge",
-      "description":
-          "Advanced quiz on portfolio diversification and risk assessment techniques.",
-      "totalQuestions": 25,
-      "completedQuestions": 0,
-      "difficulty": "Advanced",
-      "isCompleted": false,
-      "bestScore": null
-    }
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  List<Map<String, dynamic>> _getFilteredCourses() {
-    if (_searchQuery.isEmpty) return _coursesData;
-    return _coursesData.where((course) {
-      final title = (course['title'] as String).toLowerCase();
-      final description = (course['description'] as String).toLowerCase();
-      final query = _searchQuery.toLowerCase();
-      return title.contains(query) || description.contains(query);
-    }).toList();
-  }
-
-  List<Map<String, dynamic>> _getFilteredArticles() {
-    if (_searchQuery.isEmpty) return _articlesData;
-    return _articlesData.where((article) {
-      final title = (article['title'] as String).toLowerCase();
-      final author = (article['author'] as String).toLowerCase();
-      final query = _searchQuery.toLowerCase();
-      return title.contains(query) || author.contains(query);
-    }).toList();
-  }
-
-  void _toggleBookmark(int articleId) {
-    setState(() {
-      final articleIndex =
-          _articlesData.indexWhere((article) => article['id'] == articleId);
-      if (articleIndex != -1) {
-        _articlesData[articleIndex]['isBookmarked'] =
-            !(_articlesData[articleIndex]['isBookmarked'] as bool);
+  Future<void> _launchURL(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not open link'),
+            backgroundColor: AppTheme.errorColor,
+          ),
+        );
       }
-    });
+    }
   }
 
   @override
@@ -274,7 +96,7 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Learn Hub',
+                          'Learn',
                           style: Theme.of(context)
                               .textTheme
                               .headlineSmall
@@ -285,7 +107,7 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
                               ),
                         ),
                         Text(
-                          'Expand your investing knowledge',
+                          'Quick help and investment basics',
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
                                     color: AppTheme.lightTheme.colorScheme
@@ -297,7 +119,8 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
                   ),
                   InkWell(
                     onTap: () {
-                      Navigator.pushNamed(context, '/user-profile-settings');
+                      Navigator.pushNamed(
+                          context, AppRoutes.notificationsCenter);
                     },
                     borderRadius: BorderRadius.circular(20),
                     child: Container(
@@ -313,223 +136,178 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
               ),
             ),
 
-            // Search Bar
-            SearchBarWidget(
-              onSearchChanged: (query) {
-                setState(() {
-                  _searchQuery = query;
-                });
-              },
-              onFilterTap: () {
-                // Show filter options
-              },
-            ),
-
-            // Tab Bar
-            Container(
-              margin: EdgeInsets.symmetric(horizontal: 4.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Courses'),
-                  Tab(text: 'Articles'),
-                  Tab(text: 'Quizzes'),
-                  Tab(text: 'Achievements'),
-                ],
-                labelColor: AppTheme.lightTheme.colorScheme.primary,
-                unselectedLabelColor:
-                    AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                indicator: BoxDecoration(
-                  color: AppTheme.lightTheme.colorScheme.primary
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-              ),
-            ),
-
-            // Tab Content
+            // FAQ Content
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  // Courses Tab
-                  CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child:
-                            ProgressHeaderWidget(progressData: _progressData),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.all(4.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Text(
+                      'Frequently Asked Questions',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.lightTheme.colorScheme.onSurface,
+                          ),
+                    ),
+                    SizedBox(height: 2.h),
+
+                    // FAQ Cards
+                    ...(_faqData.map((faq) => Container(
+                          margin: EdgeInsets.only(bottom: 2.h),
+                          child: InkWell(
+                            onTap: () => _launchURL(faq['url']),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: EdgeInsets.all(4.w),
+                              decoration: BoxDecoration(
+                                color: AppTheme.lightTheme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.shadowLight,
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(3.w),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme
+                                          .lightTheme.colorScheme.primary
+                                          .withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: CustomIconWidget(
+                                      iconName: faq['icon'],
+                                      size: 24,
+                                      color: AppTheme
+                                          .lightTheme.colorScheme.primary,
+                                    ),
+                                  ),
+                                  SizedBox(width: 3.w),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          faq['question'],
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w600,
+                                                color: AppTheme.lightTheme
+                                                    .colorScheme.onSurface,
+                                              ),
+                                        ),
+                                        SizedBox(height: 1.h),
+                                        Text(
+                                          faq['answer'],
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                color: AppTheme
+                                                    .lightTheme
+                                                    .colorScheme
+                                                    .onSurfaceVariant,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  CustomIconWidget(
+                                    iconName: 'open_in_new',
+                                    size: 20,
+                                    color: AppTheme.lightTheme.colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ))),
+
+                    SizedBox(height: 4.h),
+
+                    // Contact Support Card
+                    Container(
+                      padding: EdgeInsets.all(4.w),
+                      decoration: BoxDecoration(
+                        color: AppTheme.lightTheme.colorScheme.primaryContainer
+                            .withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppTheme.lightTheme.colorScheme.primary
+                              .withValues(alpha: 0.3),
+                        ),
                       ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 4.w, vertical: 1.h),
-                          child: Text(
-                            'Featured Courses',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CustomIconWidget(
+                                iconName: 'help_outline',
+                                size: 24,
+                                color: AppTheme.lightTheme.colorScheme.primary,
+                              ),
+                              SizedBox(width: 2.w),
+                              Text(
+                                'Need More Help?',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppTheme
+                                          .lightTheme.colorScheme.primary,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 2.h),
+                          Text(
+                            'Contact our support team for personalized help with your investment questions.',
                             style: Theme.of(context)
                                 .textTheme
-                                .titleLarge
+                                .bodyMedium
                                 ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      AppTheme.lightTheme.colorScheme.onSurface,
+                                  color: AppTheme
+                                      .lightTheme.colorScheme.onSurfaceVariant,
                                 ),
                           ),
-                        ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final filteredCourses = _getFilteredCourses();
-                            if (index >= filteredCourses.length) return null;
-
-                            return CourseCardWidget(
-                              courseData: filteredCourses[index],
-                              onTap: () {
-                                // Navigate to course detail
-                              },
-                            );
-                          },
-                          childCount: _getFilteredCourses().length,
-                        ),
-                      ),
-                      SliverToBoxAdapter(child: SizedBox(height: 10.h)),
-                    ],
-                  ),
-
-                  // Articles Tab
-                  CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 4.w, vertical: 2.h),
-                          child: Text(
-                            'Featured Articles',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      AppTheme.lightTheme.colorScheme.onSurface,
+                          SizedBox(height: 2.h),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              onPressed: () =>
+                                  _launchURL('https://kosh.com.bd/support'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    AppTheme.lightTheme.colorScheme.primary,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(vertical: 1.5.h),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
+                              ),
+                              child: Text('Contact Support'),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            final filteredArticles = _getFilteredArticles();
-                            if (index >= filteredArticles.length) return null;
+                    ),
 
-                            return FeaturedArticleWidget(
-                              articleData: filteredArticles[index],
-                              onTap: () {
-                                // Navigate to article detail
-                              },
-                              onBookmark: () {
-                                _toggleBookmark(
-                                    filteredArticles[index]['id'] as int);
-                              },
-                            );
-                          },
-                          childCount: _getFilteredArticles().length,
-                        ),
-                      ),
-                      SliverToBoxAdapter(child: SizedBox(height: 10.h)),
-                    ],
-                  ),
-
-                  // Quizzes Tab
-                  CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 4.w, vertical: 2.h),
-                          child: Text(
-                            'Interactive Quizzes',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      AppTheme.lightTheme.colorScheme.onSurface,
-                                ),
-                          ),
-                        ),
-                      ),
-                      SliverList(
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index >= _quizzesData.length) return null;
-
-                            return QuizCardWidget(
-                              quizData: _quizzesData[index],
-                              onTap: () {
-                                // Navigate to quiz
-                              },
-                            );
-                          },
-                          childCount: _quizzesData.length,
-                        ),
-                      ),
-                      SliverToBoxAdapter(child: SizedBox(height: 10.h)),
-                    ],
-                  ),
-
-                  // Achievements Tab
-                  CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 4.w, vertical: 2.h),
-                          child: Text(
-                            'Your Achievements',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color:
-                                      AppTheme.lightTheme.colorScheme.onSurface,
-                                ),
-                          ),
-                        ),
-                      ),
-                      SliverGrid(
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          childAspectRatio: 0.8,
-                          crossAxisSpacing: 2.w,
-                          mainAxisSpacing: 1.h,
-                        ),
-                        delegate: SliverChildBuilderDelegate(
-                          (context, index) {
-                            if (index >= _achievementsData.length) return null;
-
-                            return AchievementBadgeWidget(
-                              badgeData: _achievementsData[index],
-                              onTap: () {
-                                // Show achievement details
-                              },
-                            );
-                          },
-                          childCount: _achievementsData.length,
-                        ),
-                      ),
-                      SliverToBoxAdapter(child: SizedBox(height: 10.h)),
-                    ],
-                  ),
-                ],
+                    SizedBox(height: 10.h), // Bottom padding for navigation
+                  ],
+                ),
               ),
             ),
           ],
@@ -546,19 +324,19 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
 
           switch (index) {
             case 0:
-              Navigator.pushNamed(context, '/dashboard-home');
+              Navigator.pushNamed(context, AppRoutes.marketsBrowse);
               break;
             case 1:
-              Navigator.pushNamed(context, '/markets-browse');
+              Navigator.pushNamed(context, AppRoutes.portfolioHoldings);
               break;
             case 2:
               // Already on Learn Hub
               break;
             case 3:
-              Navigator.pushNamed(context, '/portfolio-holdings');
+              Navigator.pushNamed(context, AppRoutes.notificationsCenter);
               break;
             case 4:
-              Navigator.pushNamed(context, '/user-profile-settings');
+              Navigator.pushNamed(context, AppRoutes.userProfileSettings);
               break;
           }
         },
@@ -566,28 +344,28 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
         items: [
           BottomNavigationBarItem(
             icon: CustomIconWidget(
-              iconName: 'home_outlined',
+              iconName: 'trending_up',
               size: 24,
               color: _selectedBottomIndex == 0
                   ? AppTheme.lightTheme.colorScheme.primary
                   : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
             ),
-            activeIcon: CustomIconWidget(
-              iconName: 'home',
-              size: 24,
-              color: AppTheme.lightTheme.colorScheme.primary,
-            ),
-            label: 'Home',
+            label: 'Markets',
           ),
           BottomNavigationBarItem(
             icon: CustomIconWidget(
-              iconName: 'trending_up',
+              iconName: 'account_balance_wallet_outlined',
               size: 24,
               color: _selectedBottomIndex == 1
                   ? AppTheme.lightTheme.colorScheme.primary
                   : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
             ),
-            label: 'Markets',
+            activeIcon: CustomIconWidget(
+              iconName: 'account_balance_wallet',
+              size: 24,
+              color: AppTheme.lightTheme.colorScheme.primary,
+            ),
+            label: 'Portfolio',
           ),
           BottomNavigationBarItem(
             icon: CustomIconWidget(
@@ -606,18 +384,18 @@ class _LearnHubState extends State<LearnHub> with TickerProviderStateMixin {
           ),
           BottomNavigationBarItem(
             icon: CustomIconWidget(
-              iconName: 'account_balance_wallet_outlined',
+              iconName: 'notifications_outlined',
               size: 24,
               color: _selectedBottomIndex == 3
                   ? AppTheme.lightTheme.colorScheme.primary
                   : AppTheme.lightTheme.colorScheme.onSurfaceVariant,
             ),
             activeIcon: CustomIconWidget(
-              iconName: 'account_balance_wallet',
+              iconName: 'notifications',
               size: 24,
               color: AppTheme.lightTheme.colorScheme.primary,
             ),
-            label: 'Portfolio',
+            label: 'Updates',
           ),
           BottomNavigationBarItem(
             icon: CustomIconWidget(

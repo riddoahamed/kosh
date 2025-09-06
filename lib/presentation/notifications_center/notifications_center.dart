@@ -4,11 +4,6 @@ import 'package:sizer/sizer.dart';
 
 import '../../core/app_export.dart';
 import './widgets/notification_card_widget.dart';
-import 'widgets/notification_category_header_widget.dart';
-import 'widgets/notification_empty_state_widget.dart';
-import 'widgets/notification_filter_widget.dart';
-import 'widgets/notification_preferences_widget.dart';
-import 'widgets/notification_search_widget.dart';
 
 class NotificationsCenter extends StatefulWidget {
   const NotificationsCenter({Key? key}) : super(key: key);
@@ -401,13 +396,31 @@ class _NotificationsCenterState extends State<NotificationsCenter>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => NotificationPreferencesWidget(
-        preferences: _notificationPreferences,
-        onPreferenceChanged: (String key, bool value) {
-          setState(() {
-            _notificationPreferences[key] = value;
-          });
-        },
+      builder: (context) => Container(
+        padding: EdgeInsets.all(4.w),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Notification Preferences',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            SizedBox(height: 2.h),
+            ...(_notificationPreferences.entries.map((entry) => 
+              SwitchListTile(
+                title: Text(entry.key.replaceAll('_', ' ').toUpperCase()),
+                value: entry.value,
+                onChanged: (value) {
+                  setState(() {
+                    _notificationPreferences[entry.key] = value;
+                  });
+                },
+              )
+            ).toList()),
+          ],
+        ),
       ),
     );
   }
@@ -480,17 +493,26 @@ class _NotificationsCenterState extends State<NotificationsCenter>
             child: Column(
               children: [
                 // Search Bar
-                NotificationSearchWidget(
+                TextField(
                   controller: _searchController,
-                  onSearchChanged: _onSearchChanged,
+                  decoration: InputDecoration(
+                    hintText: 'Search notifications...',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: _onSearchChanged,
                 ),
 
                 SizedBox(height: 2.h),
 
                 // Filter Controls
-                NotificationFilterWidget(
-                  showUnreadOnly: _showUnreadOnly,
-                  onUnreadToggle: _toggleUnreadFilter,
+                Row(
+                  children: [
+                    Checkbox(
+                      value: _showUnreadOnly,
+                      onChanged: (value) => _toggleUnreadFilter(),
+                    ),
+                    Text('Show unread only'),
+                  ],
                 ),
               ],
             ),
@@ -549,10 +571,24 @@ class _NotificationsCenterState extends State<NotificationsCenter>
           // Notifications List
           Expanded(
             child: filteredNotifications.isEmpty
-                ? NotificationEmptyStateWidget(
-                    hasSearchQuery: _searchQuery.isNotEmpty,
-                    hasUnreadFilter: _showUnreadOnly,
-                    selectedCategory: _selectedCategory,
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.notifications_none, size: 15.w),
+                        SizedBox(height: 2.h),
+                        Text(
+                          _searchQuery.isNotEmpty
+                              ? 'No notifications found'
+                              : _showUnreadOnly
+                                  ? 'No unread notifications'
+                                  : _selectedCategory != 'All'
+                                      ? 'No $_selectedCategory notifications'
+                                      : 'No notifications',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                      ],
+                    ),
                   )
                 : ListView.builder(
                     padding: EdgeInsets.all(4.w),
@@ -576,8 +612,14 @@ class _NotificationsCenterState extends State<NotificationsCenter>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (showDateHeader) ...[
-                            NotificationCategoryHeaderWidget(
-                              date: DateTime.parse(notification['createdAt']),
+                            Container(
+                              padding: EdgeInsets.symmetric(vertical: 1.h),
+                              child: Text(
+                                _formatDate(DateTime.parse(notification['createdAt'])),
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
                             ),
                             SizedBox(height: 2.h),
                           ],
@@ -603,5 +645,19 @@ class _NotificationsCenterState extends State<NotificationsCenter>
     return date1.year == date2.year &&
         date1.month == date2.month &&
         date1.day == date2.day;
+  }
+
+  // Add helper method for date formatting
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date).inDays;
+    
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Yesterday';
+    } else {
+      return '${date.day}/${date.month}/${date.year}';
+    }
   }
 }

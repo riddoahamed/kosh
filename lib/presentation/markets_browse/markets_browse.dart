@@ -336,7 +336,7 @@ class _MarketsBrowseState extends State<MarketsBrowse>
     HapticFeedback.lightImpact();
     Navigator.pushNamed(
       context,
-      AppRoutes.enhancedOrderTicket,
+      AppRoutes.buyOrderTicket,
       arguments: {
         'instrument': instrument,
         'orderType': 'buy',
@@ -757,7 +757,7 @@ class _MarketsBrowseState extends State<MarketsBrowse>
             switch (index) {
               case 0:
                 Navigator.pushReplacementNamed(
-                    context, AppRoutes.dashboardHome);
+                    context, AppRoutes.marketsBrowse);
                 break;
               case 1:
                 // Already on Markets Browse

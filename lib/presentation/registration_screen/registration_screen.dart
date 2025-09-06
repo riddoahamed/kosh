@@ -56,8 +56,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       // Check for duplicate email (mock validation)
       if (_formData['email'] == _mockCredentials['admin_email'] ||
           _formData['email'] == _mockCredentials['test_email']) {
-        _showErrorDialog('Account Already Exists',
-            'An account with this email already exists. Please use a different email or try logging in.');
+        _showErrorDialog(
+          'Account Already Exists',
+          'An account with this email already exists. Please use a different email or try logging in.',
+        );
         return;
       }
 
@@ -84,8 +86,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       // Move to OTP verification step
       _nextStep();
     } catch (e) {
-      _showErrorDialog('Registration Failed',
-          'Unable to create account. Please check your internet connection and try again.');
+      _showErrorDialog(
+        'Registration Failed',
+        'Unable to create account. Please check your internet connection and try again.',
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -123,12 +127,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
         _showSuccessDialog();
       } else {
-        _showErrorDialog('Invalid OTP',
-            'The verification code you entered is incorrect. Please try again or request a new code.');
+        _showErrorDialog(
+          'Invalid OTP',
+          'The verification code you entered is incorrect. Please try again or request a new code.',
+        );
       }
     } catch (e) {
-      _showErrorDialog('Verification Failed',
-          'Unable to verify your phone number. Please check your internet connection and try again.');
+      _showErrorDialog(
+        'Verification Failed',
+        'Unable to verify your phone number. Please check your internet connection and try again.',
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -174,43 +182,44 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   void _showErrorDialog(String title, String message) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(3.w),
-        ),
-        title: Row(
-          children: [
-            CustomIconWidget(
-              iconName: 'error',
-              color: AppTheme.errorColor,
-              size: 24,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(3.w),
             ),
-            SizedBox(width: 2.w),
-            Text(
-              title,
-              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+            title: Row(
+              children: [
+                CustomIconWidget(
+                  iconName: 'error',
+                  color: AppTheme.errorColor,
+                  size: 24,
+                ),
+                SizedBox(width: 2.w),
+                Text(
+                  title,
+                  style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              message,
+              style: AppTheme.lightTheme.textTheme.bodyMedium,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'OK',
+                  style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
-        content: Text(
-          message,
-          style: AppTheme.lightTheme.textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'OK',
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.primary,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -218,117 +227,125 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(3.w),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 20.w,
-              height: 20.w,
-              decoration: BoxDecoration(
-                color: AppTheme.successColor.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: CustomIconWidget(
-                  iconName: 'check_circle',
-                  color: AppTheme.successColor,
-                  size: 32,
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(3.w),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 20.w,
+                  height: 20.w,
+                  decoration: BoxDecoration(
+                    color: AppTheme.successColor.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: CustomIconWidget(
+                      iconName: 'check_circle',
+                      color: AppTheme.successColor,
+                      size: 32,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(height: 3.h),
-            Text(
-              'Account Created!',
-              style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              'Welcome to KOSH! Your account has been created successfully. You\'ll start with fantasy mode to learn investing risk-free.',
-              style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                height: 1.4,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 3.h),
-            Container(
-              padding: EdgeInsets.all(3.w),
-              decoration: BoxDecoration(
-                color: AppTheme.lightTheme.colorScheme.primaryContainer
-                    .withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(2.w),
-                border: Border.all(
-                  color: AppTheme.lightTheme.colorScheme.primary
-                      .withValues(alpha: 0.2),
+                SizedBox(height: 3.h),
+                Text(
+                  'Account Created!',
+                  style: AppTheme.lightTheme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      CustomIconWidget(
-                        iconName: 'account_balance_wallet',
-                        color: AppTheme.lightTheme.colorScheme.primary,
-                        size: 20,
+                SizedBox(height: 2.h),
+                Text(
+                  'Welcome to KOSH! Your account has been created successfully. You\'ll start with fantasy mode to learn investing risk-free.',
+                  style: AppTheme.lightTheme.textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                SizedBox(height: 3.h),
+                Container(
+                  padding: EdgeInsets.all(3.w),
+                  decoration: BoxDecoration(
+                    color: AppTheme.lightTheme.colorScheme.primaryContainer
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(2.w),
+                    border: Border.all(
+                      color: AppTheme.lightTheme.colorScheme.primary.withValues(
+                        alpha: 0.2,
                       ),
-                      SizedBox(width: 2.w),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          CustomIconWidget(
+                            iconName: 'account_balance_wallet',
+                            color: AppTheme.lightTheme.colorScheme.primary,
+                            size: 20,
+                          ),
+                          SizedBox(width: 2.w),
+                          Text(
+                            'Fantasy Cash Initialized',
+                            style: AppTheme.lightTheme.textTheme.titleSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color:
+                                      AppTheme.lightTheme.colorScheme.primary,
+                                ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: 1.h),
                       Text(
-                        'Fantasy Cash Initialized',
-                        style:
-                            AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.lightTheme.colorScheme.primary,
-                        ),
+                        'Start with ৳50,000 virtual money to practice trading',
+                        style: AppTheme.lightTheme.textTheme.bodySmall
+                            ?.copyWith(
+                              color:
+                                  AppTheme
+                                      .lightTheme
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                            ),
                       ),
                     ],
                   ),
-                  SizedBox(height: 1.h),
-                  Text(
-                    'Start with ৳50,000 virtual money to practice trading',
-                    style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                      color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                ),
+                SizedBox(height: 2.h),
+                Text(
+                  'Real trading mode available by invitation only',
+                  style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                    fontStyle: FontStyle.italic,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.pushReplacementNamed(context, '/markets-browse');
+                  },
+                  child: Text(
+                    'Start Investing',
+                    style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
-            ),
-            SizedBox(height: 2.h),
-            Text(
-              'Real trading mode available by invitation only',
-              style: AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/dashboard-home');
-              },
-              child: Text(
-                'Start Investing',
-                style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -341,42 +358,43 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     // Show confirmation dialog for exit
     final shouldExit = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(3.w),
-        ),
-        title: Text(
-          'Exit Registration?',
-          style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Your progress will be lost. Are you sure you want to exit?',
-          style: AppTheme.lightTheme.textTheme.bodyMedium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Cancel',
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
-              ),
+      builder:
+          (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(3.w),
             ),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              'Exit',
-              style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
-                color: AppTheme.errorColor,
+            title: Text(
+              'Exit Registration?',
+              style: AppTheme.lightTheme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
             ),
+            content: Text(
+              'Your progress will be lost. Are you sure you want to exit?',
+              style: AppTheme.lightTheme.textTheme.bodyMedium,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(
+                  'Cancel',
+                  style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                    color: AppTheme.lightTheme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(
+                  'Exit',
+                  style: AppTheme.lightTheme.textTheme.titleSmall?.copyWith(
+                    color: AppTheme.errorColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
 
     return shouldExit ?? false;
@@ -453,15 +471,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         style: AppTheme.lightTheme.textTheme.bodySmall,
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(
-                            context, '/login-screen'),
+                        onPressed:
+                            () => Navigator.pushReplacementNamed(
+                              context,
+                              '/login-screen',
+                            ),
                         child: Text(
                           'Sign In',
-                          style:
-                              AppTheme.lightTheme.textTheme.bodySmall?.copyWith(
-                            color: AppTheme.lightTheme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style: AppTheme.lightTheme.textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppTheme.lightTheme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],
@@ -480,15 +501,18 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         style: AppTheme.lightTheme.textTheme.bodyMedium,
                       ),
                       TextButton(
-                        onPressed: () => Navigator.pushReplacementNamed(
-                            context, '/login-screen'),
+                        onPressed:
+                            () => Navigator.pushReplacementNamed(
+                              context,
+                              '/login-screen',
+                            ),
                         child: Text(
                           'Sign In',
                           style: AppTheme.lightTheme.textTheme.bodyMedium
                               ?.copyWith(
-                            color: AppTheme.lightTheme.colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                                color: AppTheme.lightTheme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
                         ),
                       ),
                     ],

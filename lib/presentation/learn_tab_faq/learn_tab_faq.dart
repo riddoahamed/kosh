@@ -1,13 +1,12 @@
-
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 
 import '../../core/app_export.dart';
+import '../../theme/app_theme.dart';
 import './widgets/faq_card_widget.dart';
-import './widgets/faq_category_widget.dart';
 import './widgets/faq_empty_state_widget.dart';
-import './widgets/faq_search_widget.dart';
 
 class LearnTabFaq extends StatefulWidget {
   const LearnTabFaq({Key? key}) : super(key: key);
@@ -24,7 +23,42 @@ class _LearnTabFaqState extends State<LearnTabFaq>
   String _searchQuery = '';
   String _selectedCategory = 'All';
   bool _isFeatureEnabled = true;
-  List<Map<String, dynamic>> _faqData = [];
+  List<Map<String, dynamic>> _faqData = [
+    {
+      'id': '1',
+      'question': 'What is a stock?',
+      'description':
+          'Learn the basics of stock ownership and how companies raise capital',
+      'learnMoreUrl': 'https://kosh.app/learn/stocks-basics',
+    },
+    {
+      'id': '2',
+      'question': 'What is a mutual fund?',
+      'description':
+          'Understanding pooled investment vehicles and professional management',
+      'learnMoreUrl': 'https://kosh.app/learn/mutual-funds',
+    },
+    {
+      'id': '3',
+      'question': 'What is P/L?',
+      'description': 'How profit and loss calculations work in your portfolio',
+      'learnMoreUrl': 'https://kosh.app/learn/profit-loss',
+    },
+    {
+      'id': '4',
+      'question': 'How orders work in KOSH (fantasy)?',
+      'description':
+          'Understanding buy/sell orders in our fantasy trading system',
+      'learnMoreUrl': 'https://kosh.app/learn/fantasy-orders',
+    },
+    {
+      'id': '5',
+      'question': 'What is a BO account?',
+      'description':
+          'Beneficiary Owner accounts and why you need one for real trading',
+      'learnMoreUrl': 'https://kosh.app/learn/bo-account',
+    },
+  ];
   List<String> _bookmarkedFaqs = [];
   bool _isLoading = true;
 
@@ -135,6 +169,20 @@ class _LearnTabFaqState extends State<LearnTabFaq>
         duration: const Duration(seconds: 1),
       ),
     );
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not open link. Please try again later.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 
   List<Map<String, dynamic>> _getFilteredFaqs() {
@@ -316,25 +364,12 @@ class _LearnTabFaqState extends State<LearnTabFaq>
                 ),
                 child: Row(
                   children: [
-                    InkWell(
-                      onTap: () => Navigator.pop(context),
-                      borderRadius: BorderRadius.circular(20),
-                      child: Container(
-                        padding: EdgeInsets.all(2.w),
-                        child: CustomIconWidget(
-                          iconName: 'arrow_back',
-                          size: 24,
-                          color: AppTheme.lightTheme.colorScheme.onSurface,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 3.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'FAQ & Help Center',
+                            'Learn',
                             style: Theme.of(context)
                                 .textTheme
                                 .headlineSmall
@@ -345,7 +380,7 @@ class _LearnTabFaqState extends State<LearnTabFaq>
                                 ),
                           ),
                           Text(
-                            'Find answers to common questions',
+                            'Quick answers to common questions',
                             style: Theme.of(context)
                                 .textTheme
                                 .bodyMedium
@@ -361,24 +396,7 @@ class _LearnTabFaqState extends State<LearnTabFaq>
                 ),
               ),
 
-              // Search Bar
-              FaqSearchWidget(
-                onSearchChanged: (query) {
-                  setState(() => _searchQuery = query);
-                },
-                searchQuery: _searchQuery,
-              ),
-
-              // Category Filter
-              FaqCategoryWidget(
-                categories: _categories,
-                selectedCategory: _selectedCategory,
-                onCategorySelected: (category) {
-                  setState(() => _selectedCategory = category);
-                },
-              ),
-
-              // FAQ Results
+              // FAQ List
               Expanded(
                 child: filteredFaqs.isEmpty
                     ? FaqEmptyStateWidget(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sizer/sizer.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/app_export.dart';
 import './widgets/animated_logo_widget.dart';
@@ -55,10 +55,7 @@ class _SplashScreenState extends State<SplashScreen>
     _fadeAnimation = Tween<double>(
       begin: 1.0,
       end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOut,
-    ));
+    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
   }
 
   Future<void> _initializeApp() async {
@@ -136,7 +133,8 @@ class _SplashScreenState extends State<SplashScreen>
       final authToken = prefs.getString('auth_token');
       final userId = prefs.getString('user_id');
 
-      _isAuthenticated = authToken != null &&
+      _isAuthenticated =
+          authToken != null &&
           authToken.isNotEmpty &&
           userId != null &&
           userId.isNotEmpty;
@@ -150,15 +148,13 @@ class _SplashScreenState extends State<SplashScreen>
   Future<void> _loadUserPreferences() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      _hasCompletedOnboarding = prefs.getBool('completed_onboarding') ?? false;
-
       // Load other user preferences
       final theme = prefs.getString('theme_mode') ?? 'light';
       final language = prefs.getString('language') ?? 'en';
 
       await Future.delayed(const Duration(milliseconds: 400));
     } catch (e) {
-      _hasCompletedOnboarding = false;
+      // Handle gracefully - onboarding no longer required
     }
   }
 
@@ -222,12 +218,12 @@ class _SplashScreenState extends State<SplashScreen>
 
       String nextRoute;
 
-      if (!_hasCompletedOnboarding) {
-        nextRoute = '/onboarding-flow';
-      } else if (!_isAuthenticated) {
+      // Removed onboarding flow completely - go directly to login or markets
+      if (!_isAuthenticated) {
         nextRoute = '/login-screen';
       } else {
-        nextRoute = '/dashboard-home';
+        nextRoute =
+            '/markets-browse'; // Navigate to Markets Browse instead of dashboard
       }
 
       Navigator.pushReplacementNamed(context, nextRoute);
@@ -260,8 +256,9 @@ class _SplashScreenState extends State<SplashScreen>
                 end: Alignment.bottomCenter,
                 colors: [
                   AppTheme.lightTheme.colorScheme.surface,
-                  AppTheme.lightTheme.colorScheme.surface
-                      .withValues(alpha: 0.95),
+                  AppTheme.lightTheme.colorScheme.surface.withValues(
+                    alpha: 0.95,
+                  ),
                 ],
               ),
             ),
@@ -279,14 +276,13 @@ class _SplashScreenState extends State<SplashScreen>
                       // Loading or Retry Content
                       _showRetry
                           ? RetryButtonWidget(
-                              onRetry: _retryInitialization,
-                              message: _networkTimeout
-                                  ? 'Connection timeout. Please check your internet connection.'
-                                  : 'Something went wrong. Please try again.',
-                            )
-                          : LoadingIndicatorWidget(
-                              loadingText: _loadingText,
-                            ),
+                            onRetry: _retryInitialization,
+                            message:
+                                _networkTimeout
+                                    ? 'Connection timeout. Please check your internet connection.'
+                                    : 'Something went wrong. Please try again.',
+                          )
+                          : LoadingIndicatorWidget(loadingText: _loadingText),
                     ],
                   ),
                 ),
@@ -304,7 +300,9 @@ class _SplashScreenState extends State<SplashScreen>
                           fontSize: 10.sp,
                           fontWeight: FontWeight.w400,
                           color: AppTheme
-                              .lightTheme.colorScheme.onSurfaceVariant
+                              .lightTheme
+                              .colorScheme
+                              .onSurfaceVariant
                               .withValues(alpha: 0.7),
                         ),
                       ),
@@ -315,7 +313,9 @@ class _SplashScreenState extends State<SplashScreen>
                           fontSize: 9.sp,
                           fontWeight: FontWeight.w300,
                           color: AppTheme
-                              .lightTheme.colorScheme.onSurfaceVariant
+                              .lightTheme
+                              .colorScheme
+                              .onSurfaceVariant
                               .withValues(alpha: 0.5),
                         ),
                       ),
